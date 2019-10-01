@@ -1,0 +1,166 @@
+\usepackage{tikz}
+\usepackage[outline]{contour}
+\usepackage{ifthen}
+%----------------------------------------------------------------
+% get aspect ratio from image:
+\usepackage{xparse} % also loads expl3
+%\usepackage{graphicx}
+
+\ExplSyntaxOn
+\NewDocumentCommand{\aspectratio}{smo}
+ {% #2 is the image file
+  \hbox_set:Nn \l_tmpa_box {\includegraphics{#2}}
+  \IfNoValueTF{#3}
+   {
+    \__student_aspectratio:nn { \box_wd:N \l_tmpa_box } { \box_ht:N \l_tmpa_box }
+   }
+   {
+    \IfBooleanTF{#1}{ \tl_gset:Nx } { \tl_set:Nx } #3
+     {
+      \__student_aspectratio:nn { \box_wd:N \l_tmpa_box } { \box_ht:N \l_tmpa_box }
+     }
+   }
+ }
+
+\cs_new:Nn \__student_aspectratio:nn
+ {
+  % \fp_eval:n {round( #1 / #2 , 5)}
+  \fp_eval:n {round( #2 / #1 , 5)}
+ }
+\ExplSyntaxOff
+%----------------------------------------------------------------
+
+%----------------------------------------------------------------
+% figure with insets, top or bottom:
+%----------------------------------------------------------------
+% need these lengths for our macro:
+\newlength{\imgw}
+\newlength{\imgh}
+\newlength{\offrx}
+\newlength{\offry}
+\newlength{\offbx}
+\newlength{\offby}
+% this is the macro.
+% parameters:
+% 1 image file name
+% 2 text left
+% 3 text right
+% 4 bottom or top alignment of insets
+% 5 6 offsets of red insets
+% 7 8 offsets of blue insets
+\newcommand{\imginset}[8]{%
+\aspectratio*{#1}[\imgaspect]
+\setlength{\imgh}{\imgaspect\linewidth}
+\setlength{\offrx}{#5\linewidth}
+\setlength{\offry}{#6\imgh}
+\setlength{\offbx}{#7\linewidth}
+\setlength{\offby}{#8\imgh}
+\begin{tikzpicture}%
+% main image:
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\linewidth]{#1}};
+% frames in image:
+% scale = 4, .125 = scale/32:
+\draw[orange] (\offrx,\offry) rectangle(\offrx+.125\linewidth,\offry+.125\imgh);
+\draw[blue]   (\offbx,\offby) rectangle(\offbx+.125\linewidth,\offby+.125\imgh);
+\draw[white](0.0,\imgh) node[below right]{\small \contour{black}{#2}};
+\draw[white](\linewidth,\imgh) node[below left]{\small \contour{black}{#3}};
+% left inset:
+\begin{scope}
+\ifthenelse{\equal{#4}{bottom}}{%
+\clip (0,-0.5\imgh) rectangle(.5\linewidth,0);
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (-4\offrx,-4\offry-.5\imgh) {\includegraphics[width=4\linewidth]{#1}}; % scale = 4
+}{%
+\clip (0,\imgh) rectangle(.5\linewidth,1.5\imgh);
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (-4\offrx,-4\offry+\imgh) {\includegraphics[width=4\linewidth]{#1}}; % scale = 4
+}
+\end{scope}
+% right inset:
+\begin{scope}
+\ifthenelse{\equal{#4}{bottom}}{%
+\clip (.5\linewidth,-.5\imgh) rectangle(\linewidth,0);
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (-4\offbx+.5\linewidth,-4\offby-.5\imgh) {\includegraphics[width=4\linewidth]{#1}}; % scale
+}{%
+\clip (.5\linewidth,\imgh) rectangle(\linewidth,1.5\imgh);
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (-4\offbx+.5\linewidth,-4\offby+\imgh) {\includegraphics[width=4\linewidth]{#1}}; % scale
+}%
+\end{scope}
+\ifthenelse{\equal{#4}{bottom}}{%
+\draw[orange,very thick] (.5pt,-0.5\imgh+.5pt) rectangle(.5\linewidth-.5pt,-.5pt);
+\draw[blue,very thick]   (.5pt+.5\linewidth,-0.5\imgh+.5pt) rectangle(\linewidth-.5pt,-.5pt);
+}{%
+\draw[orange,very thick] (.5pt,\imgh+.5pt) rectangle(.5\linewidth-.5pt,1.5\imgh-.5pt);
+\draw[blue,very thick]   (.5pt+.5\linewidth,\imgh+.5pt) rectangle(\linewidth-.5pt,1.5\imgh-.5pt);
+}%
+\end{tikzpicture}}%
+
+
+
+\newcommand{\imgtext}[3]{%
+\aspectratio*{#1}[\imgaspect]
+\setlength{\imgh}{\imgaspect\linewidth}
+\begin{tikzpicture}%
+% main image:
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\linewidth]{#1}};
+% frames in image:
+% scale = 4, .125 = scale/32:
+\draw[white](0.0,\imgh) node[below right]{\small \contour{black}{#2}};
+\draw[white](\linewidth,\imgh) node[below left]{\small \contour{black}{#3}};
+% left inset:
+% right inset:
+\end{tikzpicture}}%
+
+% this is the "wide" macro with insets to the sides
+% parameters:
+% 1 image file name
+% 2 text left
+% 3 text right
+% 4 left or right alignment of insets
+% 5 6 offsets of red insets
+% 7 8 offsets of blue insets
+\newcommand{\imginsetw}[8]{%
+\aspectratio*{#1}[\imgaspect]
+\setlength{\imgw}{0.66666\linewidth}
+\setlength{\imgh}{\imgaspect\imgw}
+\setlength{\offrx}{#5\imgw}
+\setlength{\offry}{#6\imgh}
+\setlength{\offbx}{#7\imgw}
+\setlength{\offby}{#8\imgh}
+\begin{tikzpicture}%
+% main image:
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (0,0) {\includegraphics[width=\imgw]{#1}};
+% frames in image:
+% scale = 4, .125 = scale/32:
+\draw[orange] (\offrx,\offry) rectangle(\offrx+.125\imgw,\offry+.125\imgh);
+\draw[blue]   (\offbx,\offby) rectangle(\offbx+.125\imgw,\offby+.125\imgh);
+\draw[white](0.0,\imgh) node[below right]{\small \contour{black}{#2}};
+\draw[white](\imgw,\imgh) node[below left]{\small \contour{black}{#3}};
+% left inset:
+\begin{scope}
+\ifthenelse{\equal{#4}{left}}{%
+% \clip (0,-0.5\imgh) rectangle(.5\linewidth,0);
+\clip (-.5\imgw,0) rectangle(0,.5\imgh);
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (-4\offrx-.5\imgw,-4\offry+.5\imgh) {\includegraphics[width=4\imgw]{#1}}; % scale = 4
+}{%
+\clip (\imgw,0) rectangle(1.5\imgw,.5\imgh);
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (-4\offrx+\imgw,-4\offry+0) {\includegraphics[width=4\imgw]{#1}}; % scale = 4
+}
+\end{scope}
+% right inset:
+\begin{scope}
+\ifthenelse{\equal{#4}{left}}{%
+\clip (-.5\imgw,.5\imgh) rectangle(0,\imgh);
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (-4\offbx-.5\imgw,-4\offby+.5\imgh) {\includegraphics[width=4\imgw]{#1}}; % scale
+}{%
+\clip (\imgw,.5\imgh) rectangle(1.5\imgw,\imgh);
+\node[anchor=south west,inner sep=0pt,outer sep=0pt] at (-4\offbx+\imgw,-4\offby+.5\imgh) {\includegraphics[width=4\imgw]{#1}}; % scale
+}%
+\end{scope}
+\ifthenelse{\equal{#4}{left}}{%
+\draw[orange,very thick] (.5pt-.5\imgw,.5pt) rectangle(-.5pt,.5\imgh-.5pt);
+\draw[blue,very thick]   (.5pt-.5\imgw,0.5\imgh+.5pt) rectangle(-.5pt,\imgh-.5pt);
+}{%
+\draw[orange,very thick] (.5pt+\imgw,.5pt) rectangle(1.5\imgw-.5pt,.5\imgh-.5pt);
+\draw[blue,very thick]   (.5pt+\imgw,0.5\imgh+.5pt) rectangle(1.5\imgw-.5pt,\imgh-.5pt);
+}%
+\end{tikzpicture}}%
+
